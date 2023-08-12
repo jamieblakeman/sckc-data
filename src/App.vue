@@ -169,7 +169,7 @@
       <header class="py-10">
         <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <h1 class="text-3xl font-bold tracking-tight text-white">
-            SCKC Data Logger
+            SCKC Data Logger - SCKC {{ teamStore.matchStats.scScore }} - {{ teamStore.matchStats.oppScore }} Opposition
           </h1>
         </div>
       </header>
@@ -178,35 +178,68 @@
     <main class="-mt-32">
       <div class="mx-auto max-w-7xl px-4 pb-12 sm:px-6 lg:px-8">
         <div class="">
-          <p class="test">Test</p>
+          <!-- <p class="test">Test</p> -->
           <VueYtframe
             ref="yt"
-            video-id="ygz00uuohKA"
+            video-id="2A5lfgIC9Gw"
             :height="height"
             :width="width"
             :playerVars="playerVars"
           />
         </div>
       </div>
-      <div class="w-1/2">
+      <div class="w-1/2 pl-2">
+        <!-- .sort((a, b) => b.goals - a.goals) -->
+        <transition-group name="flip-list" tag="div" class="row horizontal-scroll">
         <div
-          v-for="player in teamStore.teamStats"
+          v-for="player in teamStore.teamStats.slice().sort((a, b) => b.goals - a.goals)"
           :key="player.name"
-          class="font-semibold"
+          class="font-semibold pb-2"
         >
-          {{ player.name }} - {{ player.shots }} shot{{
-            player.shots > 1 ? "s" : ""
-          }}
+          {{ player.name }} 
+          <Chip class="" :pt="{root: {class: 'pl-0 text-slate-700'}}" >
+              <span class="bg-red-700 text-white rounded-full w-8 h-8 flex items-center justify-center">{{ player.shots }} </span>
+              <span class="ml-2 font-medium">Shot{{
+            player.shots == 1 ? "" : "s"
+          }}</span>
+          </Chip>
+          <Chip class="ml-1 pl-0 pr-4" :pt="{root: {class: 'p-0'}}">
+              <span class="bg-red-700 text-white rounded-full w-8 h-8 flex items-center justify-center">{{ player.goals }}</span>
+              <span class="ml-2 font-medium">Goal{{
+            player.goal == 1 ? "" : "s"
+          }}</span>
+          </Chip>
           <ProgressBar
+          class="mt-1"
             :value="player.shootingPercentage"
+            :key="player.name"
             :pt="{
-              value: {
-                class: 'bg-red-500',
-              },
+        value: { style: { background: 'linear-gradient(to right, #880808, #EE4B2B)' } }
             }"
           />
         </div>
+        </transition-group>
       </div>
+      <div class="card">
+        <PickList v-model="teamStore.teamPick" listStyle="height:342px" dataKey="item.name">
+            <template #sourceheader> Available </template>
+            <template #targetheader> Selected </template>
+            <template #item="slotProps">
+                <div class="flex flex-wrap p-2 align-items-center gap-3">
+                    <!-- <img class="w-4rem shadow-2 flex-shrink-0 border-round" :src="'https://primefaces.org/cdn/primevue/images/product/' + slotProps.item.image" :alt="slotProps.item.name" /> -->
+                    <div class="flex-1 flex flex-column gap-2">
+                        <span class="font-bold">{{ slotProps.item.name }}</span>
+                        <!-- <div class="flex align-items-center gap-2">
+                            <i class="pi pi-tag text-sm"></i>
+                            <span>{{ slotProps.item.name }}</span>
+                        </div> -->
+                    </div>
+                    <!-- <span class="font-bold text-900">$ {{ slotProps.item.name }}</span> -->
+                </div>
+            </template>
+        </PickList>
+        {{ teamStore.teamPick }}
+    </div>
     </main>
   </div>
 </template>

@@ -1,28 +1,47 @@
 <template>
   <div class="flex">
-    <div ref="youtube" :id="playerId"></div>
-    <div class="w-1/2">
-      <button class="p-3 h-12 bg-indigo-400 text-white" @click="testing()">
+    <div  :class="teamStore.state.mode == 'reality' ? 'hidden' : 'block'">    <div ref="youtube" :id="playerId"></div></div>
+
+    <div v-show="teamStore.state.mode == 'reality'" class="w-1/4  rounded-md text-center mt-3 text-white text-3xl font-semibold">
+      <button @click="teamStore.startClock()" v-if="!teamStore.secondsElapsed">Start Timer</button> 
+      <div> {{ Math.floor(teamStore.secondsElapsed/60) }} : {{ Math.floor(teamStore.secondsElapsed % 60).toString().padStart(2, '0') }}</div>
+    </div>
+    <div class="w-full">
+      <button class="p-3 h-12 bg-indigo-500 rounded-md mr-2 text-white" @click="teamStore.state.mode == 'reality' ? teamStore.state.mode = 'review' : teamStore.state.mode = 'reality'">
         Toggle
       </button>
       <button
-        class="p-3 h-12 bg-indigo-400 text-white"
-        @click="logEvent('goal')"
+        class="p-3 px-10 h-12 bg-red-500 rounded-md mr-2 text-white"
+        @click="logEvent('shot')"
       >
-        Goal
+        Shot
       </button>
-      <button
-        class="p-3 h-12 bg-indigo-400 text-white"
+      <!-- <button
+        class="p-3 h-12 bg-red-500 rounded-md mr-2 text-white"
         @click="logEvent('miss')"
       >
         Missed Shot
+      </button> -->
+      <!-- <button
+        class="p-3 h-12 bg-blue-800 rounded-md mr-2 text-white"
+        @click="logEvent('goalOpp')"
+      >
+        Opp Goal
+      </button> -->
+      <button
+        class="p-3 px-10 h-12 bg-blue-800 rounded-md mr-2 text-white"
+        @click="logEvent('shotOpp')"
+      >
+        Opp Shot
       </button>
-      <div class="bg-blue-200 flex">
+      <div class=" flex mt-2">
         <ScrollPanel style="width: 100%; height: 400px">
+          <transition-group name="flip-list" tag="div" class="row horizontal-scroll">
           <div
             v-for="(event, index) in teamStore.log.slice().reverse()"
-            :key="index"
-            class="bg-red-800 p-5 rounded-lg mb-2"
+            :key="event.time"
+            class="p-5 rounded-lg mb-2"
+            :class="event.action.includes('Opp') ? 'bg-blue-800' : 'bg-red-800 '"
           >
             <div class="flex space-x-4 text-gray-700">
               <div>
@@ -33,6 +52,7 @@
                 >
 
                 <v-select
+                  v-if="!event.action.includes('Opp')"
                   v-model="event.playerName"
                   :options="teamStore.team"
                   :reduce="(team) => team.name"
@@ -58,18 +78,26 @@
               </div>
               <button
                 class="bg-blue-100 rounded-md p-3 text-sm"
+                @click="editEvent(index, event.action.includes('Opp') ? 'goalOpp' : 'goal')"
+                v-if="!event.action.includes('goal')"
+              >
+                Goal
+              </button>
+              <button
+                class="bg-blue-100 rounded-md p-3 text-sm"
                 @click="removeEvent(index)"
               >
                 Remove
               </button>
             </div>
           </div>
+          </transition-group>
         </ScrollPanel>
       </div>
     </div>
   </div>
-  {{ teamStore.teamStats }}
-  {{ teamStore.log }}
+  <!-- {{ teamStore.teamStats }}
+  {{ teamStore.log }} -->
 </template>
 <script setup>
 import { onMounted, ref, watch } from "vue";
@@ -211,7 +239,7 @@ const delay = (ms) => new Promise((res) => setTimeout(res, ms));
 
 const logEvent = (eventType) => {
   teamStore.log.push({
-    time: player.value.playerInfo.currentTime,
+    time: teamStore.state.mode == 'reality' ? teamStore.secondsElapsed : player.value.playerInfo.currentTime,
     action: eventType,
     playerName: null,
     assistPlayerName: null,
@@ -220,7 +248,12 @@ const logEvent = (eventType) => {
 
 const removeEvent = (index) => {
   // because reversed
-  teamStore.log.splice(log.value.length - (index + 1), 1);
+  teamStore.log.splice(teamStore.log.length - (index + 1), 1);
+};
+
+const editEvent = (index, eventType) => {
+  // because reversed
+  teamStore.log[teamStore.log.length - (index + 1)]['action'] = eventType
 };
 
 const testing = () => {
@@ -899,6 +932,13 @@ defineExpose({
 
 .test {
   opacity: 0.5;
+}
+.flip-list-move {
+  transition: transform 0.5s;
+}
+
+.flip-list-slow-move {
+  transition: transform 1s;
 }
 
 :deep(.ytp-pause-overlay) {
